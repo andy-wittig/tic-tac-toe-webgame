@@ -2,6 +2,7 @@
 Andrew Wittig
 6/13/2025
 */
+
 var gameHasStarted = false;
 var isPlayersTurn = false;
 var firstTurnTaken = false;
@@ -23,8 +24,8 @@ function drawGameBoard()
     for (let i = 0; i < gameButtons.length; i++)
     {
         gameButtons[i].innerHTML = boardData[i];
-        gameButtons[i].style.backgroundColor = "rgb(160, 232, 239)";
-        gameButtons[i].style.boxShadow = "0px 1vw rgb(83, 170, 194)";
+        gameButtons[i].classList.remove("btn-red");
+        gameButtons[i].classList.add("btn-normal");
     }
 }
 
@@ -44,7 +45,7 @@ function startGame()
         { 
             gameInfo.innerHTML = "Players turn!"; 
         }
-        else 
+        else
         { 
             gameInfo.innerHTML = "Bots turn!"; 
             botTurn();
@@ -97,13 +98,16 @@ function gameButton(button)
 function botTurn()
 {
     gameInfo.innerHTML = "Bots turn!";
+    startButton.disabled = true;
 
     sleep(1500).then(() => {
         if (!gameHasStarted) { return; }
+
         gameInfo.innerHTML = "Bot thinking...";
 
         sleep(2000).then(() => {
             if (!gameHasStarted) { return; }
+
             let botChoice = Math.floor(Math.random() * 9); //0-8
             while (boardData[botChoice] == "X" || boardData[botChoice] == "O")
             {
@@ -119,6 +123,8 @@ function botTurn()
                 botTurn();
                 return;
             }
+            
+            startButton.disabled = false;
 
             if (checkGameOver()) { return; }
 
@@ -130,7 +136,7 @@ function botTurn()
 
 function checkGameOver()
 {
-    if (checkScore("X"))
+    if (checkWin("X"))
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "Player wins!";
@@ -138,7 +144,8 @@ function checkGameOver()
         firstTurnTaken = false;
         return true;
     }
-    else if (checkScore("O"))
+
+    else if (checkWin("O"))
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "Bot wins!";
@@ -146,6 +153,7 @@ function checkGameOver()
         firstTurnTaken = false;
         return true;
     }
+
     let gameTied = true;
     for (let i = 0; i < boardData.length; i ++)
     {
@@ -154,6 +162,7 @@ function checkGameOver()
             gameTied = false;
         }
     }
+
     if (gameTied)
     {
         startButton.innerHTML = "start";
@@ -162,59 +171,51 @@ function checkGameOver()
         firstTurnTaken = false;
         return true;
     }
+
     return false;
 }
 
-function checkScore(char)
+function drawWinButtons(btn1, btn2, btn3)
+{
+    gameButtons[btn1].classList.remove("btn-normal");
+    gameButtons[btn2].classList.remove("btn-normal");
+    gameButtons[btn3].classList.remove("btn-normal");
+    gameButtons[btn1].classList.add("btn-red");
+    gameButtons[btn2].classList.add("btn-red");
+    gameButtons[btn3].classList.add("btn-red");
+}
+
+function checkWin(btnType)
 {
     for (let i = 0; i < boardData.length; i += 3) //Rows
     {
-        if (boardData[i] == char && boardData[i + 1] == char && boardData[i + 2] == char)
+        if (boardData[i] == btnType && boardData[i + 1] == btnType && boardData[i + 2] == btnType)
         {
-            gameButtons[i].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i + 1].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i + 2].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-            gameButtons[i + 1].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-            gameButtons[i + 2].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
+            drawWinButtons(i, i + 1, i + 2);
             return true;
         }
     }
 
     for (let i = 0; i < 3; i++) //Columns
     {
-        if (boardData[i] == char && boardData[i + 3] == char && boardData[i + 6] == char)
+        if (boardData[i] == btnType && boardData[i + 3] == btnType && boardData[i + 6] == btnType)
         {
-            gameButtons[i].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i + 3].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i + 6].style.backgroundColor = "rgb(239, 160, 160)";
-            gameButtons[i].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-            gameButtons[i + 3].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-            gameButtons[i + 6].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
+            drawWinButtons(i, i + 3, i + 6);
             return true;
         }
     }
 
-    if (boardData[0] == char && boardData[4] == char && boardData[8] == char) //Diagonal
+    if (boardData[0] == btnType && boardData[4] == btnType && boardData[8] == btnType) //Diagonal
     {
-        gameButtons[0].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[4].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[8].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[0].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-        gameButtons[4].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-        gameButtons[8].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
+        drawWinButtons(0, 4, 8);
         return true;
     }
 
-    if (boardData[2] == char && boardData[4] == char && boardData[6] == char) //Diagonal
+    if (boardData[2] == btnType && boardData[4] == btnType && boardData[6] == btnType) //Diagonal
     {
-        gameButtons[2].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[4].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[6].style.backgroundColor = "rgb(239, 160, 160)";
-        gameButtons[2].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-        gameButtons[4].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
-        gameButtons[6].style.boxShadow = "0px 1vw rgb(194, 83, 83)";
+        drawWinButtons(2, 4, 6);
         return true; 
     }
+
     return false;
 }

@@ -21,7 +21,7 @@
     padding: 10px;
 }
 
-#itm-button
+.btn-normal
 {
     display: flex;
     justify-content: center;
@@ -36,14 +36,29 @@
     font-size: 3vw;
 }
 
-#itm-button:hover
+.btn-red
+{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px;
+    border-radius: 20%;
+    background-color: rgb(239, 160, 160);
+    box-shadow: 0px 1vw rgb(194, 83, 83);
+    color: white;
+    text-shadow: 0px .1vw black;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 3vw;
+}
+
+.btn-normal:hover
 {
     cursor: pointer;
     background-color: rgb(149, 239, 247);
     transform: translateY(-.6vw);
 }
 
-#itm-button:active
+.btn-normal:active
 {
     cursor: pointer;
     box-shadow: 0px 0.6vw rgb(83, 170, 194);
@@ -70,13 +85,26 @@
     font-weight: bold;
 }
 
-#start-button:hover
+#start-button:disabled
+{
+    margin: auto;
+    display: block;
+    padding: 2vh;
+    border: none;
+    background-color: rgb(197, 197, 197);
+    box-shadow: 0px 1vw rgb(124, 124, 124);
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 1vw;
+    font-weight: bold;
+}
+
+#start-button:hover:enabled
 {
     cursor: pointer;
     animation: scale-emphasize 1.5s infinite ease-in-out;
 }
 
-#start-button:active
+#start-button:active:enabled
 {
     box-shadow: 0px 0.5vw rgb(135, 121, 182);
 }
