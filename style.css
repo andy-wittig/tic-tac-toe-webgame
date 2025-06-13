@@ -1,0 +1,30 @@
+.body
+{
+
+}
+
+.game-container
+{
+    display: grid;
+    justify-content: center;
+    place-items: center;
+    grid-template-columns: auto auto auto;
+    column-gap: 10px;
+    row-gap: 10px;
+    text-align: center;
+    padding: 10px;
+    background-color: beige;
+}
+
+#itm0, #itm1, #itm2, #itm3, #itm4, #itm5, #itm6, #itm7, #itm8
+{
+    background-color: aqua;
+    padding: 4vw;
+}
+
+#start-button
+{
+    margin: auto;
+    display: block;
+    padding: 2vh;
+}
