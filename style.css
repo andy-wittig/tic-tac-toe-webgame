@@ -1,25 +1,59 @@
-.body
+#grad
 {
-
+    background-image: radial-gradient(circle, rgb(225, 197, 160), beige);
 }
 
-.game-container
+#game-container
 {
     display: grid;
     justify-content: center;
-    place-items: center;
-    grid-template-columns: auto auto auto;
-    column-gap: 10px;
-    row-gap: 10px;
-    text-align: center;
-    padding: 10px;
-    background-color: beige;
+    grid-template-columns: 8vw 8vw 8vw;
+    grid-template-rows: 8vw 8vw 8vw;
+    grid-gap: 10px;
+    padding: 2vh;
 }
 
-#itm0, #itm1, #itm2, #itm3, #itm4, #itm5, #itm6, #itm7, #itm8
+#game-info
 {
-    background-color: aqua;
-    padding: 4vw;
+    text-align: center;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 2vw;
+    padding: 10px;
+}
+
+#itm-button
+{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px;
+    border-radius: 20%;
+    background-color: rgb(160, 232, 239);
+    box-shadow: 0px 1vw rgb(83, 170, 194);
+    text-shadow: 0px .1vw rgb(83, 170, 194);
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 3vw;
+}
+
+#itm-button:hover
+{
+    cursor: pointer;
+    background-color: rgb(149, 239, 247);
+    transform: translateY(-.6vw);
+}
+
+#itm-button:active
+{
+    cursor: pointer;
+    box-shadow: 0px 0.6vw rgb(83, 170, 194);
+    background-color: rgb(149, 239, 247);
+    animation: anim-bounce 1.5s infinite; 
+}
+
+@keyframes anim-bounce
+{
+    0%, 100% { transform: scale(1) translateY(-.4vw); }
+    50% { transform: scale(0.9) translateY(-.4vw); }
 }
 
 #start-button
@@ -27,4 +61,38 @@
     margin: auto;
     display: block;
     padding: 2vh;
+    border: none;
+    background-color: rgb(156, 158, 212);
+    box-shadow: 0px 1vw rgb(135, 121, 182);
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 1vw;
+    font-weight: bold;
+}
+
+#start-button:hover
+{
+    cursor: pointer;
+    animation: scale-emphasize 1.5s infinite ease-in-out;
+}
+
+#start-button:active
+{
+    box-shadow: 0px 0.5vw rgb(135, 121, 182);
+}
+
+@keyframes scale-emphasize
+{
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.05) translateY(-4px); }
+}
+
+.clear-animation
+{
+    animation: anim_clear 1s ease-in-out;
+}
+
+@keyframes anim_clear
+{
+    0%, 100% {opacity: 100%; }
+    50% { opacity: 0; }
 }

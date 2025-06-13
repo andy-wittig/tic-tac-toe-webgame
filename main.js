@@ -1,60 +1,124 @@
 var gameHasStarted = false;
+var isPlayersTurn = false;
+var firstTurnTaken = false;
+var boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
 
-function drawGameBoard(board)
+const gameContainer = document.getElementById("game-container");
+const startButton = document.getElementById("start-button");
+const gameInfo = document.getElementById("game-info");
+
+function sleep(ms)
 {
-    //const gameContainer = document.getElementById("game-container");
-    for (let i = 0; i < 9; i+=3)
-    {
-        const col1 = document.getElementById("itm" + i);
-        const col2 = document.getElementById("itm" + (i + 1));
-        const col3 = document.getElementById("itm" + (i + 2));
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-        col1.innerHTML = board[i / 3][0];
-        col2.innerHTML = board[i / 3][1];
-        col3.innerHTML = board[i / 3][2];
+function drawGameBoard()
+{
+    const gameButtons = gameContainer.children;
+    for (let i = 0; i < gameButtons.length; i++)
+    {
+        gameButtons[i].innerHTML = boardData[i];
     }
 }
 
 function startGame()
 {
-    //Init game variables
-    var boardData = [
-        ["-", "-", "-"],
-        ["-", "-", "-"],
-        ["-", "-", "-"]
-    ];
-
-    drawGameBoard(boardData);
-
-    if (!gameHasStarted) 
+    if (!gameHasStarted)
     {
+        boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
         gameHasStarted = true;
-        //runGame(boardData);
+        isPlayersTurn = Math.random() < 0.5;
+        console.log(isPlayersTurn);
+        startButton.innerHTML = "clear";
+        gameContainer.classList.remove("clear-animation");
+        drawGameBoard();
+
+        if (isPlayersTurn) 
+        { 
+            gameInfo.innerHTML = "Players turn!"; 
+        }
+        else 
+        { 
+            gameInfo.innerHTML = "Bots turn!"; 
+            botTurn();
+        }
     }
     else //Clear board
     {
+        gameContainer.classList.add("clear-animation");
+        boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
+        drawGameBoard();
+        startButton.innerHTML = "start";
+        gameInfo.innerHTML = "Board cleared!";
         gameHasStarted = false;
+        firstTurnTaken = false;
         return;
     }
 }
 
-function isGameOver(board)
+function gameButton(button)
 {
-    return false;
+    if (isGameOver()) { return; }
+
+    if (gameHasStarted && isPlayersTurn)
+    {
+        if (boardData[button] == "X" || boardData[button] == "O")
+        {
+            gameInfo.innerHTML = "Sorry, this tile is taken!";
+            return;
+        }
+        else if (boardData[button] == "-")
+        {
+            boardData[button] = "X";
+            drawGameBoard();
+        }
+        
+        if (firstTurnTaken)
+        {
+            isPlayersTurn = false;
+            botTurn();
+        }
+        else
+        {
+            gameInfo.innerHTML = "Players turn again!";
+            firstTurnTaken = true;
+            return;
+        }
+    }
 }
 
-async function runGame(board) //Main game loop
+function botTurn()
 {
-    var roundsPlayed = 0;
+    gameInfo.innerHTML = "Bots turn!";
 
-    while (!isGameOver(board) && gameHasStarted)
-    {
-        //await getPlayerTurn();
-        drawGameBoard(board);
+    sleep(1500).then(() => {
+        if (!gameHasStarted) { return; }
+        gameInfo.innerHTML = "Bot thinking...";
 
-        //await getBotTurn();
-        drawGameBoard(board);
+        sleep(2000).then(() => {
+            if (!gameHasStarted) { return; }
+            let botChoice = Math.floor(Math.random() * 9); //0-8
+            while (boardData[botChoice] == "X" || boardData[botChoice] == "O")
+            {
+                botChoice = Math.floor(Math.random() * 9); //try new position
+            }
+            boardData[botChoice] = "O";
+            drawGameBoard();
+            
+            if (!firstTurnTaken)
+            {
+                firstTurnTaken = true;
+                botTurn();
+                return;
+            }
 
-        roundsPlayed++;
-    }
+            gameInfo.innerHTML = "Players turn!";
+            isPlayersTurn = true;
+        });
+    });
+}
+
+function isGameOver()
+{
+    return false;
 }
