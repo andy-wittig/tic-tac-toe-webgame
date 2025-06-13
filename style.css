@@ -30,7 +30,8 @@
     border-radius: 20%;
     background-color: rgb(160, 232, 239);
     box-shadow: 0px 1vw rgb(83, 170, 194);
-    text-shadow: 0px .1vw rgb(83, 170, 194);
+    color: white;
+    text-shadow: 0px .1vw black;
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     font-size: 3vw;
 }
@@ -88,7 +89,7 @@
 
 .clear-animation
 {
-    animation: anim_clear 1s ease-in-out;
+    animation: anim_clear 0.8s ease-out;
 }
 
 @keyframes anim_clear
