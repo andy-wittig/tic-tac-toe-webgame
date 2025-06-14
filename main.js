@@ -2,23 +2,31 @@
 Andrew Wittig
 6/13/2025
 */
-
 var gameHasStarted = false;
 var isPlayersTurn = false;
 var firstTurnTaken = false;
 var winner = "";
+var wins = 0;
 var boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
 
 const gameContainer = document.getElementById("game-container");
 const startButton = document.getElementById("start-button");
 const gameInfo = document.getElementById("game-info");
+const scoreCount = document.getElementById("score");
 const gameButtons = gameContainer.children;
 
+/**
+ * Delays execution of resolve function.
+ *
+ * @param {int} ms - Time to wait in miliseconds.
+ * @returns {Promise} - Promise uses setTimeout to delay execution of the resolve function.
+ */
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/** Iterates through the game board data structure to update the HTML tic-tac-toe grid. */
 function drawGameBoard()
 {
     for (let i = 0; i < gameButtons.length; i++)
@@ -29,9 +37,10 @@ function drawGameBoard()
     }
 }
 
+/** Controls the game state, either starting the board or clearing it. */
 function startGame()
 {
-    if (!gameHasStarted)
+    if (!gameHasStarted) //Start the game
     {
         boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
         gameHasStarted = true;
@@ -51,7 +60,7 @@ function startGame()
             botTurn();
         }
     }
-    else //Clear board
+    else //Clear the board
     {
         gameContainer.classList.add("clear-animation");
         boardData = ["T", "I", "C", "T", "A", "C", "T", "O", "E"];
@@ -60,10 +69,14 @@ function startGame()
         gameInfo.innerHTML = "Board cleared!";
         gameHasStarted = false;
         firstTurnTaken = false;
-        return;
     }
 }
 
+/**
+ * Called when a button on the board is pressed. Handles the players turn and calls the bots function for it's turn.
+ *
+ * @param {int} button - The button position to attempt to place an "X" for the player's turn.
+ */
 function gameButton(button)
 {
     if (gameHasStarted && isPlayersTurn)
@@ -78,6 +91,8 @@ function gameButton(button)
             boardData[button] = "X";
             drawGameBoard();
         }
+
+        if (checkGameOver()) { return; }
         
         if (firstTurnTaken)
         {
@@ -88,13 +103,11 @@ function gameButton(button)
         {
             gameInfo.innerHTML = "Players turn again!";
             firstTurnTaken = true;
-            return;
         }
     }
-
-    if (checkGameOver()) { return; }
 }
 
+/** Manages the bot's turn, choosing the next "O" position and updates the game logic accordingly. */
 function botTurn()
 {
     gameInfo.innerHTML = "Bots turn!";
@@ -134,12 +147,19 @@ function botTurn()
     });
 }
 
+/**
+ * Checks the win state and resets the game. Wins can occur either by tie, player win, or bot win.
+ *
+ * @returns {boolean} - Returns true or false based on whether the game is over.
+ */
 function checkGameOver()
 {
     if (checkWin("X"))
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "Player wins!";
+        wins++;
+        scoreCount.innerHTML = "Win-Streak: " + wins;
         gameHasStarted = false;
         firstTurnTaken = false;
         return true;
@@ -149,6 +169,8 @@ function checkGameOver()
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "Bot wins!";
+        wins = 0;
+        scoreCount.innerHTML = "Win-Streak: " + wins;
         gameHasStarted = false;
         firstTurnTaken = false;
         return true;
@@ -175,6 +197,13 @@ function checkGameOver()
     return false;
 }
 
+/**
+ * Takes three button positions to color the winning buttons.
+ *
+ * @param {int} btn1 - Position of the first button to color red.
+ * @param {int} btn2 - Position of the second button to color red.
+ * @param {nt} btn3 - Position of the third button to color red.
+ */
 function drawWinButtons(btn1, btn2, btn3)
 {
     gameButtons[btn1].classList.remove("btn-normal");
@@ -185,6 +214,12 @@ function drawWinButtons(btn1, btn2, btn3)
     gameButtons[btn3].classList.add("btn-red");
 }
 
+/**
+ * Checks if the designated character has a winning placement on the game board.
+ *
+ * @param {char} btnType - The character used to check if there is three in a row. Typically "X" or "O".
+ * @returns {boolean} - Returns true if the specified character has three in a row, and false otherwise.
+ */
 function checkWin(btnType)
 {
     for (let i = 0; i < boardData.length; i += 3) //Rows

@@ -3,6 +3,14 @@
     background-image: radial-gradient(circle, rgb(225, 197, 160), beige);
 }
 
+#score
+{
+    text-align: center;
+    background-color: beige;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 2vw;
+}
+
 #game-container
 {
     display: grid;
