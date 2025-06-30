@@ -35,7 +35,6 @@ const gameContainer = document.getElementById("game-container");
 const startButton = document.getElementById("start-button");
 const gameInfo = document.getElementById("game-info");
 const clientGameInfo = document.getElementById("client-game-info");
-const scoreCount = document.getElementById("score");
 const gameButtons = gameContainer.children;
 const divFileSystem = document.getElementById("file-system-buttons");
 
@@ -252,18 +251,18 @@ async function gameLoop()
         await writeGameState();
     }
 
-    if (gameState.gameHasStarted)
-    {
-        if (gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
-        else if (!gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's the client's turn!"; }
-        if (!gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
-        else if (gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's the host's turn!"; }
-    }
-
     if (!gameState.gameOver)
     {
+        if (gameState.gameHasStarted)
+        {
+            if (gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
+            else if (!gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's the client's turn!"; }
+            if (!gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
+            else if (gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's the host's turn!"; }
+        }
+
         drawGameBoard();
-        gameState.gameOver = checkGameOver();
+        checkGameOver();
     }
     else
     {
@@ -329,6 +328,8 @@ async function startGame()
  */
 async function gameButton(button)
 {
+    if (gameState.gameOver) { return; }
+
     pauseRead = true;
     try
     {
@@ -377,14 +378,15 @@ async function gameButton(button)
  *
  * @returns {boolean} - Returns true or false based on whether the game is over.
  */
-function checkGameOver()
+async function checkGameOver()
 {
     if (checkWin("X"))
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "The host wins!";
-        wins++;
-        scoreCount.innerHTML = "Win-Streak: " + wins;
+
+        gameState.gameOver = true;
+        await writeGameState();
         return true;
     }
 
@@ -392,8 +394,9 @@ function checkGameOver()
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "The client wins!";
-        wins = 0;
-        scoreCount.innerHTML = "Win-Streak: " + wins;
+
+        gameState.gameOver = true;
+        await writeGameState();
         return true;
     }
 
@@ -410,6 +413,9 @@ function checkGameOver()
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "It was a Tie!";
+
+        gameState.gameOver = true;
+        await writeGameState();
         return true;
     }
 
