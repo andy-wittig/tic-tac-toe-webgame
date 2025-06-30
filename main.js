@@ -1,19 +1,22 @@
 /*
 Andrew Wittig
-6/13/2025
-*/
-var gameHasStarted = false;
-var isPlayersTurn = false;
-var firstTurnTaken = false;
-var winner = "";
-var wins = 0;
-var boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
+6/29/2025
 
-const gameContainer = document.getElementById("game-container");
-const startButton = document.getElementById("start-button");
-const gameInfo = document.getElementById("game-info");
-const scoreCount = document.getElementById("score");
-const gameButtons = gameContainer.children;
+Self Hosted Tic Tac Toe (using JSON) Web Game
+*/
+
+if ("showOpenFilePicker" in self)
+{
+    console.log("The File System Access API is supported in this browser!");
+}
+
+//----------Math Helpers----------
+function getRandIntFromRange(min, max)
+{ //Inclusive
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 /**
  * Delays execution of resolve function.
@@ -25,51 +28,211 @@ function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+//----------End Math Helpers----------
+
+//----------HTML Elements----------
+const gameContainer = document.getElementById("game-container");
+const startButton = document.getElementById("start-button");
+const gameInfo = document.getElementById("game-info");
+const clientGameInfo = document.getElementById("client-game-info");
+const scoreCount = document.getElementById("score");
+const gameButtons = gameContainer.children;
+const divFileSystem = document.getElementById("file-system-buttons");
+
+gameInfo.innerHTML = "Either host or join a game to start playing!";
+
+divFileSystem.addEventListener('animationend', (event) => {
+    divFileSystem.innerHTML = "";
+});
+//----------End HTML Elements----------
+
+//----------Game Logic Variables----------
+let diceRoll = getRandIntFromRange(1, 6);
+let firstRound = true;
+
+var gameState = {
+    gameHasStarted: false,
+    firstRound: true,
+    startingRoll: diceRoll,
+    hostRoll: 0,
+    clientRoll: 0,
+    isHostTurn: false,
+    boardData: ["T", "I", "C", "T", "A", "C", "T", "O", "E"]
+}
+
+let fileHandle;
+
+async function readGameState()
+{
+    let gameStateFile = await fileHandle.getFile();
+    let gameStateContent = await gameStateFile.text();
+
+    const newGameState = JSON.parse(gameStateContent);
+
+    Object.assign(gameState, newGameState);
+}
+
+async function writeGameState()
+{
+    const writableGameState = await fileHandle.createWritable();
+
+    const jsonString = JSON.stringify(gameState);
+
+    await writableGameState.write(jsonString);
+    await writableGameState.close();
+}
+//----------End Game Logic Variables----------
+
+//----------Saving and Loading Files----------
+async function getFileHandle()
+{
+    const options = {
+        startIn: "documents",
+        types: [{
+            accept: { "application/json" : [".json"] }
+        }]
+    };
+
+    try
+    {
+        const [fileHandle] = await window.showOpenFilePicker(options);
+        return fileHandle;
+    }
+    catch (err)
+    {
+        console.log(`There was an error openening the file picker: ${err}`);
+        throw err;
+    }
+}
+async function saveFileHandle()
+{
+    const options = {
+        startIn: "documents",
+        suggestedName: 'Game State.json',
+        types: [{
+            description: "Json Files",
+            accept: { "application/json" : [".json"] }
+        }]
+    };
+    
+    try
+    {
+        const fileHandle = await window.showSaveFilePicker(options);
+        return fileHandle;
+    }
+    catch (err)
+    {
+        console.error(`The file save was cancelled or failed: ${err}`);
+        throw err;
+    }
+}
+//----------End Saving and Loading Files----------
+
+//----------Joining and Hosting----------
+let isUserHost;
+
+async function joinGame()
+{
+    try
+    {
+        fileHandle = await getFileHandle();
+
+        document.title = "Tic-Tac-Toe Client";
+        divFileSystem.classList.add("fade-out");
+
+        await readGameState();
+        startButton.disabled = false;
+        isUserHost = false;
+    }
+    catch (err)
+    {
+        console.log("Could not join the game: ", err);
+    }
+}
+
+async function hostGame()
+{
+    try
+    {
+        fileHandle = await saveFileHandle();
+
+        document.title = "Tic-Tac-Toe Host";
+        divFileSystem.classList.add("fade-out");
+
+        await writeGameState();
+        startButton.disabled = false;
+        isUserHost = true;
+    }
+    catch (err)
+    {
+        console.error("Hosting failed!: ", err);
+    }
+}
+//----------End Joining and Hosting----------
 
 /** Iterates through the game board data structure to update the HTML tic-tac-toe grid. */
 function drawGameBoard()
 {
     for (let i = 0; i < gameButtons.length; i++)
     {
-        gameButtons[i].innerHTML = boardData[i];
+        gameButtons[i].innerHTML = gameState.boardData[i];
         gameButtons[i].classList.remove("btn-red");
         gameButtons[i].classList.add("btn-normal");
     }
 }
 
-/** Controls the game state, either starting the board or clearing it. */
-function startGame()
+let lastTime = 0;
+startButton.innerHTML = "Roll";
+startButton.disabled = true;
+
+async function gameLoop()
 {
-    if (!gameHasStarted) //Start the game
+    if (gameState.hostRoll > 0 && gameState.clientRoll > 0 && gameState.firstRound) //Both parties have completed their rolls
     {
-        boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
-        gameHasStarted = true;
-        isPlayersTurn = Math.random() < 0.5;
-
-        startButton.innerHTML = "clear";
-        gameContainer.classList.remove("clear-animation");
-        drawGameBoard();
-
-        if (isPlayersTurn) 
-        { 
-            gameInfo.innerHTML = "Players turn!"; 
-        }
-        else
-        { 
-            gameInfo.innerHTML = "Bots turn!"; 
-            botTurn();
-        }
+        await readGameState();
+        gameInfo.innerHTML
+        gameState.firstRound = false;
+        await writeGameState();
     }
-    else //Clear the board
+    requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
+
+/** Controls the game state, either starting the board or clearing it. */
+async function startGame()
+{
+    await readGameState();
+
+    if (gameState.firstRound)
+    {
+        clientGameInfo.innerHTML = `The computer has rolled a ${gameState.startingRoll}`;
+    }
+
+    if (gameState.firstRound && isUserHost) //Host Dice Roll
+    {
+        let roll = getRandIntFromRange(1, 6);
+        gameState.hostRoll = roll;
+        gameInfo.innerHTML = `You rolled a ${gameState.hostRoll}`;
+    }
+
+    if (gameState.firstRound && !isUserHost) //Client Dice Roll
+    {
+        let roll = getRandIntFromRange(1, 6);
+        gameState.clientRoll = roll;
+        gameInfo.innerHTML = `You rolled a ${gameState.clientRoll}`;
+    }
+
+    if (!gameState.firstRound) //Clear the board
     {
         gameContainer.classList.add("clear-animation");
-        boardData = ["T", "I", "C", "T", "A", "C", "T", "O", "E"];
+        gameState.boardData = ["T", "I", "C", "T", "A", "C", "T", "O", "E"];
         drawGameBoard();
         startButton.innerHTML = "start";
-        gameInfo.innerHTML = "Board cleared!";
-        gameHasStarted = false;
-        firstTurnTaken = false;
+        gameInfo.innerHTML = "Board has been cleared!";
+        gameState.gameHasStarted = false;
     }
+
+    await writeGameState();
 }
 
 /**
@@ -77,74 +240,37 @@ function startGame()
  *
  * @param {int} button - The button position to attempt to place an "X" for the player's turn.
  */
-function gameButton(button)
+async function gameButton(button)
 {
-    if (gameHasStarted && isPlayersTurn)
+    if (gameState.gameHasStarted && isUserHost && gameState.isHostTurn)
     {
-        if (boardData[button] == "X" || boardData[button] == "O")
+        if (gameState.boardData[button] == "X" || gameState.boardData[button] == "O")
         {
             gameInfo.innerHTML = "Sorry, this tile is taken!";
             return;
         }
-        else if (boardData[button] == "-")
+        else if (gameState.boardData[button] == "-")
         {
-            boardData[button] = "X";
-            drawGameBoard();
+            gameState.boardData[button] = "X";
         }
 
         if (checkGameOver()) { return; }
-        
-        if (firstTurnTaken)
-        {
-            isPlayersTurn = false;
-            botTurn();
-        }
-        else
-        {
-            gameInfo.innerHTML = "Players turn again!";
-            firstTurnTaken = true;
-        }
     }
-}
 
-/** Manages the bot's turn, choosing the next "O" position and updates the game logic accordingly. */
-function botTurn()
-{
-    gameInfo.innerHTML = "Bots turn!";
-    startButton.disabled = true;
+    if (gameState.gameHasStarted && !isUserHost && !gameState.isHostTurn)
+    {
+        if (gameState.boardData[button] == "X" || gameState.boardData[button] == "O")
+        {
+            gameInfo.innerHTML = "Sorry, this tile is taken!";
+            return;
+        }
+        else if (gameState.boardData[button] == "-")
+        {
+            gameState.boardData[button] = "O";
+        }
 
-    sleep(1500).then(() => {
-        if (!gameHasStarted) { return; }
-
-        gameInfo.innerHTML = "Bot thinking...";
-
-        sleep(2000).then(() => {
-            if (!gameHasStarted) { return; }
-
-            let botChoice = Math.floor(Math.random() * 9); //0-8
-            while (boardData[botChoice] == "X" || boardData[botChoice] == "O")
-            {
-                botChoice = Math.floor(Math.random() * 9); //try new position
-            }
-            boardData[botChoice] = "O";
-            drawGameBoard();
-            
-            if (!firstTurnTaken)
-            {
-                firstTurnTaken = true;
-                if (checkGameOver()) { return; }
-                botTurn();
-                return;
-            }
-            
-            startButton.disabled = false;
-
-            if (checkGameOver()) { return; }
-
-            gameInfo.innerHTML = "Players turn!";
-            isPlayersTurn = true;
-        });
-    });
+        if (checkGameOver()) { return; }
+    }
 }
 
 /**
@@ -152,34 +278,32 @@ function botTurn()
  *
  * @returns {boolean} - Returns true or false based on whether the game is over.
  */
-function checkGameOver()
+async function checkGameOver()
 {
     if (checkWin("X"))
     {
         startButton.innerHTML = "start";
-        gameInfo.innerHTML = "Player wins!";
+        gameInfo.innerHTML = "The host wins!";
         wins++;
         scoreCount.innerHTML = "Win-Streak: " + wins;
-        gameHasStarted = false;
-        firstTurnTaken = false;
+        gameState.gameHasStarted = false;
         return true;
     }
 
     else if (checkWin("O"))
     {
         startButton.innerHTML = "start";
-        gameInfo.innerHTML = "Bot wins!";
+        gameInfo.innerHTML = "The client wins!";
         wins = 0;
         scoreCount.innerHTML = "Win-Streak: " + wins;
-        gameHasStarted = false;
-        firstTurnTaken = false;
+        gameState.gameHasStarted = false;
         return true;
     }
 
     let gameTied = true;
-    for (let i = 0; i < boardData.length; i ++)
+    for (let i = 0; i < gameState.boardData.length; i ++)
     {
-        if (boardData[i] == "-")
+        if (gameState.boardData[i] == "-")
         {
             gameTied = false;
         }
@@ -188,9 +312,8 @@ function checkGameOver()
     if (gameTied)
     {
         startButton.innerHTML = "start";
-        gameInfo.innerHTML = "Tie!";
-        gameHasStarted = false;
-        firstTurnTaken = false;
+        gameInfo.innerHTML = "It was a Tie!";
+        gameState.gameHasStarted = false;
         return true;
     }
 
@@ -222,9 +345,9 @@ function drawWinButtons(btn1, btn2, btn3)
  */
 function checkWin(btnType)
 {
-    for (let i = 0; i < boardData.length; i += 3) //Rows
+    for (let i = 0; i < gameState.boardData.length; i += 3) //Rows
     {
-        if (boardData[i] == btnType && boardData[i + 1] == btnType && boardData[i + 2] == btnType)
+        if (gameState.boardData[i] == btnType && gameState.boardData[i + 1] == btnType && gameState.boardData[i + 2] == btnType)
         {
             drawWinButtons(i, i + 1, i + 2);
             return true;
@@ -233,20 +356,20 @@ function checkWin(btnType)
 
     for (let i = 0; i < 3; i++) //Columns
     {
-        if (boardData[i] == btnType && boardData[i + 3] == btnType && boardData[i + 6] == btnType)
+        if (gameState.boardData[i] == btnType && gameState.boardData[i + 3] == btnType && gameState.boardData[i + 6] == btnType)
         {
             drawWinButtons(i, i + 3, i + 6);
             return true;
         }
     }
 
-    if (boardData[0] == btnType && boardData[4] == btnType && boardData[8] == btnType) //Diagonal
+    if (gameState.boardData[0] == btnType && gameState.boardData[4] == btnType && gameState.boardData[8] == btnType) //Diagonal
     {
         drawWinButtons(0, 4, 8);
         return true;
     }
 
-    if (boardData[2] == btnType && boardData[4] == btnType && boardData[6] == btnType) //Diagonal
+    if (gameState.boardData[2] == btnType && gameState.boardData[4] == btnType && gameState.boardData[6] == btnType) //Diagonal
     {
         drawWinButtons(2, 4, 6);
         return true; 
