@@ -48,11 +48,11 @@ divFileSystem.addEventListener('animationend', (event) => {
 
 //----------Game Logic Variables----------
 let diceRoll = getRandIntFromRange(1, 6);
-let firstRound = true;
 
 var gameState = {
     gameHasStarted: false,
     firstRound: true,
+    clearBoard: false,
     startingRoll: diceRoll,
     hostRoll: 0,
     clientRoll: 0,
@@ -61,6 +61,7 @@ var gameState = {
 }
 
 let fileHandle;
+let pauseRead = false;
 
 async function readGameState()
 {
@@ -140,7 +141,7 @@ async function joinGame()
         document.title = "Tic-Tac-Toe Client";
         divFileSystem.classList.add("fade-out");
 
-        await readGameState();
+        requestAnimationFrame(gameLoop);
         startButton.disabled = false;
         isUserHost = false;
     }
@@ -160,6 +161,7 @@ async function hostGame()
         divFileSystem.classList.add("fade-out");
 
         await writeGameState();
+        requestAnimationFrame(gameLoop);
         startButton.disabled = false;
         isUserHost = true;
     }
@@ -187,20 +189,72 @@ startButton.disabled = true;
 
 async function gameLoop()
 {
+    if (!pauseRead)
+    {
+        try
+        {
+            await readGameState();
+        }
+        catch (err)
+        {
+            console.error(err);
+        }
+    }
+
+    drawGameBoard();
+
     if (gameState.hostRoll > 0 && gameState.clientRoll > 0 && gameState.firstRound) //Both parties have completed their rolls
     {
-        await readGameState();
-        gameInfo.innerHTML
+        startButton.disabled = false;
+        startButton.innerHTML = "clear";
+
+        let hostScore = Math.abs(gameState.startingRoll - gameState.hostRoll);
+        let clientScore = Math.abs(gameState.startingRoll - gameState.clientRoll);
+
+        if (hostScore < clientScore)
+        {
+            gameInfo.innerHTML = `The host's roll of ${gameState.hostRoll} was closest to the computer's roll of ${gameState.startingRoll}.`;
+            clientGameInfo.innerHTML = `The client lost with a roll of ${gameState.clientRoll}. It's the host's turn.`;
+            gameState.isHostTurn = true;
+        }
+        else
+        {
+            gameInfo.innerHTML = `The client's roll of ${gameState.clientRoll} was closest to the computer's roll of ${gameState.startingRoll}.`;
+            clientGameInfo.innerHTML = `The host lost with a roll of ${gameState.hostRoll}. It's the client's turn.`;
+            gameState.isHostTurn = false;
+        }
+
         gameState.firstRound = false;
+        gameState.gameHasStarted = true;
+        gameState.boardData = ["-", "-", "-", "-", "-", "-", "-", "-", "-"];
         await writeGameState();
     }
+
+    if (gameState.clearBoard)
+    {
+        startButton.innerHTML = "start";
+        gameInfo.innerHTML = "Board has been cleared!";
+        clientGameInfo.innerHTML = "";
+        gameContainer.classList.add("clear-animation");
+        gameState.boardData = ["T", "I", "C", "T", "A", "C", "T", "O", "E"];
+
+        gameState.gameHasStarted = false;
+        gameState.firstRound = true;
+        gameState.hostRoll = 0;
+        gameState.clientRoll = 0;
+        gameState.clearBoard = false
+        await writeGameState();
+    }
+
+    if (game)
+
     requestAnimationFrame(gameLoop);
 }
-requestAnimationFrame(gameLoop);
 
 /** Controls the game state, either starting the board or clearing it. */
 async function startGame()
 {
+    pauseRead = true;
     await readGameState();
 
     if (gameState.firstRound)
@@ -213,6 +267,7 @@ async function startGame()
         let roll = getRandIntFromRange(1, 6);
         gameState.hostRoll = roll;
         gameInfo.innerHTML = `You rolled a ${gameState.hostRoll}`;
+        startButton.disabled = true;
     }
 
     if (gameState.firstRound && !isUserHost) //Client Dice Roll
@@ -220,19 +275,16 @@ async function startGame()
         let roll = getRandIntFromRange(1, 6);
         gameState.clientRoll = roll;
         gameInfo.innerHTML = `You rolled a ${gameState.clientRoll}`;
+        startButton.disabled = true;
     }
 
-    if (!gameState.firstRound) //Clear the board
+    if (gameState.gameHasStarted && !gameState.firstRound) //Clear the board
     {
-        gameContainer.classList.add("clear-animation");
-        gameState.boardData = ["T", "I", "C", "T", "A", "C", "T", "O", "E"];
-        drawGameBoard();
-        startButton.innerHTML = "start";
-        gameInfo.innerHTML = "Board has been cleared!";
-        gameState.gameHasStarted = false;
+        gameState.clearBoard = true;
     }
 
     await writeGameState();
+    pauseRead = false;
 }
 
 /**
@@ -242,8 +294,11 @@ async function startGame()
  */
 async function gameButton(button)
 {
+    pauseRead = true;
+    await readGameState();
+
     if (gameState.gameHasStarted && isUserHost && gameState.isHostTurn)
-    {
+    { //Host
         if (gameState.boardData[button] == "X" || gameState.boardData[button] == "O")
         {
             gameInfo.innerHTML = "Sorry, this tile is taken!";
@@ -252,13 +307,15 @@ async function gameButton(button)
         else if (gameState.boardData[button] == "-")
         {
             gameState.boardData[button] = "X";
+            gameState.isHostTurn = !gameState.isHostTurn;
+            await writeGameState();
         }
 
         if (checkGameOver()) { return; }
     }
 
     if (gameState.gameHasStarted && !isUserHost && !gameState.isHostTurn)
-    {
+    { //Client
         if (gameState.boardData[button] == "X" || gameState.boardData[button] == "O")
         {
             gameInfo.innerHTML = "Sorry, this tile is taken!";
@@ -267,10 +324,14 @@ async function gameButton(button)
         else if (gameState.boardData[button] == "-")
         {
             gameState.boardData[button] = "O";
+            gameState.isHostTurn = !gameState.isHostTurn;
+            await writeGameState();
         }
 
         if (checkGameOver()) { return; }
     }
+
+    pauseRead = false;
 }
 
 /**
