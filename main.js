@@ -75,12 +75,14 @@ async function readGameState()
 
 async function writeGameState()
 {
+    pauseRead = true;
     const writableGameState = await fileHandle.createWritable();
 
     const jsonString = JSON.stringify(gameState);
 
     await writableGameState.write(jsonString);
     await writableGameState.close();
+    pauseRead = false;
 }
 //----------End Game Logic Variables----------
 
