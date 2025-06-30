@@ -214,7 +214,7 @@ async function gameLoop()
             clientGameInfo.innerHTML = `
             The host's roll of ${gameState.hostRoll} was closest to the computer's roll of ${gameState.startingRoll}.
             <br>
-            The client lost with a roll of ${gameState.clientRoll}. It's the host's turn.
+            The client lost with a roll of ${gameState.clientRoll}.
             `;
             gameState.isHostTurn = true;
         }
@@ -223,7 +223,7 @@ async function gameLoop()
             clientGameInfo.innerHTML = `
             The client's roll of ${gameState.clientRoll} was closest to the computer's roll of ${gameState.startingRoll}.
             <br>
-            The host lost with a roll of ${gameState.hostRoll}. It's the client's turn.
+            The host lost with a roll of ${gameState.hostRoll}.
             `;
             gameState.isHostTurn = false;
         }
