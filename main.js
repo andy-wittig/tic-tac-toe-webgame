@@ -213,14 +213,20 @@ async function gameLoop()
 
         if (hostScore < clientScore)
         {
-            gameInfo.innerHTML = `The host's roll of ${gameState.hostRoll} was closest to the computer's roll of ${gameState.startingRoll}.`;
-            clientGameInfo.innerHTML = `The client lost with a roll of ${gameState.clientRoll}. It's the host's turn.`;
+            clientGameInfo.innerHTML = `
+            The host's roll of ${gameState.hostRoll} was closest to the computer's roll of ${gameState.startingRoll}.
+            <br>
+            The client lost with a roll of ${gameState.clientRoll}. It's the host's turn.
+            `;
             gameState.isHostTurn = true;
         }
         else
         {
-            gameInfo.innerHTML = `The client's roll of ${gameState.clientRoll} was closest to the computer's roll of ${gameState.startingRoll}.`;
-            clientGameInfo.innerHTML = `The host lost with a roll of ${gameState.hostRoll}. It's the client's turn.`;
+            clientGameInfo.innerHTML = `
+            The client's roll of ${gameState.clientRoll} was closest to the computer's roll of ${gameState.startingRoll}.
+            <br>
+            The host lost with a roll of ${gameState.hostRoll}. It's the client's turn.
+            `;
             gameState.isHostTurn = false;
         }
 
@@ -246,7 +252,13 @@ async function gameLoop()
         await writeGameState();
     }
 
-    if (game)
+    if (gameState.gameHasStarted)
+    {
+        if (gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
+        else if (!gameState.isHostTurn && isUserHost) { gameInfo.innerHTML = "It's the client's turn!"; }
+        if (!gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's your turn!"; }
+        else if (gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's the host's turn!"; }
+    }
 
     requestAnimationFrame(gameLoop);
 }
@@ -307,7 +319,7 @@ async function gameButton(button)
         else if (gameState.boardData[button] == "-")
         {
             gameState.boardData[button] = "X";
-            gameState.isHostTurn = !gameState.isHostTurn;
+            gameState.isHostTurn = false;
             await writeGameState();
         }
 
@@ -324,7 +336,7 @@ async function gameButton(button)
         else if (gameState.boardData[button] == "-")
         {
             gameState.boardData[button] = "O";
-            gameState.isHostTurn = !gameState.isHostTurn;
+            gameState.isHostTurn = true;
             await writeGameState();
         }
 
