@@ -51,6 +51,7 @@ let diceRoll = getRandIntFromRange(1, 6);
 
 var gameState = {
     gameHasStarted: false,
+    gameOver: false,
     firstRound: true,
     clearBoard: false,
     startingRoll: diceRoll,
@@ -201,8 +202,6 @@ async function gameLoop()
         }
     }
 
-    drawGameBoard();
-
     if (gameState.hostRoll > 0 && gameState.clientRoll > 0 && gameState.firstRound) //Both parties have completed their rolls
     {
         startButton.disabled = false;
@@ -248,7 +247,8 @@ async function gameLoop()
         gameState.firstRound = true;
         gameState.hostRoll = 0;
         gameState.clientRoll = 0;
-        gameState.clearBoard = false
+        gameState.clearBoard = false;
+        gameState.gameOver = false;
         await writeGameState();
     }
 
@@ -260,6 +260,17 @@ async function gameLoop()
         else if (gameState.isHostTurn && !isUserHost) { gameInfo.innerHTML = "It's the host's turn!"; }
     }
 
+    if (!gameState.gameOver)
+    {
+        drawGameBoard();
+        gameState.gameOver = checkGameOver();
+    }
+    else
+    {
+        checkWin("X");
+        checkWin("O");
+    }
+
     requestAnimationFrame(gameLoop);
 }
 
@@ -267,7 +278,14 @@ async function gameLoop()
 async function startGame()
 {
     pauseRead = true;
-    await readGameState();
+    try
+    {
+        await readGameState();
+    }
+    catch (err)
+    {
+        console.error(err);
+    }
 
     if (gameState.firstRound)
     {
@@ -295,6 +313,11 @@ async function startGame()
         gameState.clearBoard = true;
     }
 
+    if (gameState.gameOver)
+    {
+        gameState.clearBoard = true;
+    }
+
     await writeGameState();
     pauseRead = false;
 }
@@ -307,7 +330,14 @@ async function startGame()
 async function gameButton(button)
 {
     pauseRead = true;
-    await readGameState();
+    try
+    {
+        await readGameState();
+    }
+    catch (err)
+    {
+        console.error(err);
+    }
 
     if (gameState.gameHasStarted && isUserHost && gameState.isHostTurn)
     { //Host
@@ -318,12 +348,10 @@ async function gameButton(button)
         }
         else if (gameState.boardData[button] == "-")
         {
-            gameState.boardData[button] = "X";
             gameState.isHostTurn = false;
+            gameState.boardData[button] = "X";
             await writeGameState();
         }
-
-        if (checkGameOver()) { return; }
     }
 
     if (gameState.gameHasStarted && !isUserHost && !gameState.isHostTurn)
@@ -335,12 +363,10 @@ async function gameButton(button)
         }
         else if (gameState.boardData[button] == "-")
         {
-            gameState.boardData[button] = "O";
             gameState.isHostTurn = true;
+            gameState.boardData[button] = "O";
             await writeGameState();
         }
-
-        if (checkGameOver()) { return; }
     }
 
     pauseRead = false;
@@ -351,7 +377,7 @@ async function gameButton(button)
  *
  * @returns {boolean} - Returns true or false based on whether the game is over.
  */
-async function checkGameOver()
+function checkGameOver()
 {
     if (checkWin("X"))
     {
@@ -359,7 +385,6 @@ async function checkGameOver()
         gameInfo.innerHTML = "The host wins!";
         wins++;
         scoreCount.innerHTML = "Win-Streak: " + wins;
-        gameState.gameHasStarted = false;
         return true;
     }
 
@@ -369,14 +394,13 @@ async function checkGameOver()
         gameInfo.innerHTML = "The client wins!";
         wins = 0;
         scoreCount.innerHTML = "Win-Streak: " + wins;
-        gameState.gameHasStarted = false;
         return true;
     }
 
     let gameTied = true;
     for (let i = 0; i < gameState.boardData.length; i ++)
     {
-        if (gameState.boardData[i] == "-")
+        if (gameState.boardData[i] == "-" || gameState.boardData[i] == "T")
         {
             gameTied = false;
         }
@@ -386,7 +410,6 @@ async function checkGameOver()
     {
         startButton.innerHTML = "start";
         gameInfo.innerHTML = "It was a Tie!";
-        gameState.gameHasStarted = false;
         return true;
     }
 
